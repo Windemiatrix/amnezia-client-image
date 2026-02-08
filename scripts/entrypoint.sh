@@ -13,7 +13,7 @@ HEALTH_CHECK_HOST="${HEALTH_CHECK_HOST:-1.1.1.1}"
 
 # --- Logging helpers ---------------------------------------------------------
 log()   { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
-debug() { [[ "$LOG_LEVEL" == "debug" ]] && log "[DEBUG] $*" || true; }
+debug() { if [[ "$LOG_LEVEL" == "debug" ]]; then log "[DEBUG] $*"; fi; }
 info()  { log "[INFO]  $*"; }
 warn()  { log "[WARN]  $*"; }
 error() { log "[ERROR] $*"; }
