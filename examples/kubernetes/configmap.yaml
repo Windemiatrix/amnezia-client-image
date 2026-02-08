@@ -1,0 +1,41 @@
+# =============================================================================
+# Kubernetes ConfigMap — AmneziaWG config template
+#
+# WARNING: This is a TEMPLATE only. Do NOT store private keys here!
+#          Use a Kubernetes Secret for real deployments:
+#
+#   kubectl create secret generic amneziawg-config \
+#     --from-file=wg0.conf=/path/to/your/wg0.conf
+#
+# This ConfigMap shows the expected format of an AmneziaWG config file.
+# AmneziaWG extends the standard WireGuard format with additional
+# obfuscation parameters (Jc, Jmin, Jmax, S1, S2, H1, H2, H3, H4).
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: amneziawg-config-template
+  labels:
+    app: app-with-vpn
+data:
+  wg0.conf.example: |
+    [Interface]
+    PrivateKey = <YOUR_PRIVATE_KEY>
+    Address = 10.0.0.2/32
+    DNS = 1.1.1.1, 8.8.8.8
+    Jc = 0
+    Jmin = 0
+    Jmax = 0
+    S1 = 0
+    S2 = 0
+    H1 = 1
+    H2 = 2
+    H3 = 3
+    H4 = 4
+
+    [Peer]
+    PublicKey = <SERVER_PUBLIC_KEY>
+    PresharedKey = <PRESHARED_KEY>
+    Endpoint = <SERVER_IP>:<SERVER_PORT>
+    AllowedIPs = 0.0.0.0/0
+    PersistentKeepalive = 25
