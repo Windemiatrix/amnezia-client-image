@@ -115,6 +115,42 @@ If any check fails, the add-on is marked as **unhealthy**.
 - Make sure `kill_switch` is enabled to prevent leaks.
 - Verify the server config has `AllowedIPs = 0.0.0.0/0` for full tunnel mode.
 
+## Using as a Network Gateway
+
+You can use this add-on as a VPN gateway so that other devices on your network route traffic through the VPN tunnel.
+
+### How it works
+
+The add-on uses **host networking**, so it shares the same IP address as your Home Assistant host. When you point your router's static route to the HA host IP, incoming packets are forwarded through the VPN tunnel with NAT (MASQUERADE).
+
+### Setup
+
+1. **Find your HA host IP** — e.g., `192.168.1.100`.
+2. **Disable kill switch** (recommended for gateway mode) — set `kill_switch: false` in the add-on config. The kill switch blocks non-VPN INPUT traffic, which would prevent LAN devices from reaching the gateway.
+3. **Configure static routes on your router:**
+   - To route **all traffic** through VPN: set `0.0.0.0/0` next-hop to `192.168.1.100`.
+   - To route **specific subnets** through VPN: add routes like `10.0.0.0/8 via 192.168.1.100`.
+
+### Router configuration example
+
+Most routers support static routes in their admin panel. The exact steps depend on your router model:
+
+```
+Destination: 0.0.0.0/0    (or a specific subnet)
+Gateway:     192.168.1.100 (your HA host IP)
+```
+
+On Linux-based routers (OpenWrt, Keenetic, etc.):
+```bash
+ip route add 10.0.0.0/8 via 192.168.1.100
+```
+
+### Important notes
+
+- **IP forwarding** must be enabled on the HA host. The add-on sets `net.ipv4.ip_forward=1` automatically.
+- **AllowedIPs** in your `.conf` file should include the destination networks you want to route (or `0.0.0.0/0` for all traffic).
+- If you use `kill_switch: true` in gateway mode, FORWARD traffic through the VPN interface is still allowed, but INPUT from LAN may be blocked.
+
 ## Support
 
 - [GitHub Issues](https://github.com/Windemiatrix/amnezia-client-image/issues)

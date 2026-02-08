@@ -77,6 +77,38 @@ docker run -d \
 
 ## Режим VPN-шлюза
 
+### Сетевой шлюз (маршрутизация устройств LAN через VPN)
+
+Используйте контейнер как сетевой шлюз, чтобы другие устройства в сети (ПК, телефоны, IoT) направляли трафик через VPN-туннель. Для этого необходим **host networking** — контейнер разделяет IP-адрес хоста.
+
+```bash
+docker run -d \
+  --name=amneziawg-gw \
+  --network=host \
+  --cap-add=NET_ADMIN \
+  --cap-add=SYS_MODULE \
+  --device=/dev/net/tun:/dev/net/tun \
+  --sysctl net.ipv4.conf.all.src_valid_mark=1 \
+  --sysctl net.ipv4.ip_forward=1 \
+  -v /path/to/config:/config \
+  -e KILL_SWITCH=0 \
+  --restart=unless-stopped \
+  ghcr.io/windemiatrix/amnezia-client-image:latest
+```
+
+Затем на роутере добавьте статический маршрут:
+
+```
+Назначение: 0.0.0.0/0         # или конкретная подсеть, например 10.0.0.0/8
+Шлюз:       192.168.1.100     # IP хоста с контейнером
+```
+
+> **Примечание:** Отключите kill switch (`KILL_SWITCH=0`) в режиме шлюза — иначе входящий трафик из LAN будет заблокирован.
+
+Entrypoint автоматически настраивает правила iptables FORWARD и NAT MASQUERADE на VPN-интерфейсе.
+
+### Контейнерный шлюз (маршрутизация других контейнеров через VPN)
+
 Направьте трафик других контейнеров через VPN-туннель с помощью `network_mode: service:vpn` в Docker Compose:
 
 ```yaml
@@ -174,9 +206,11 @@ HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3
 1. Разрешить трафик на loopback
 2. Разрешить трафик к endpoint AmneziaWG (IP:порт из `.conf`)
 3. Разрешить трафик через VPN-интерфейс
-4. Разрешить DNS-трафик к серверам из `.conf` (если DNS настроен)
-5. Разрешить established/related соединения
-6. **DROP** — заблокировать всё остальное
+4. Разрешить ICMPv6 neighbor discovery
+5. Разрешить DNS-трафик к серверам из `.conf` (если DNS настроен)
+6. Разрешить FORWARD через VPN-интерфейс (режим шлюза)
+7. Разрешить established/related соединения
+8. **DROP** — заблокировать всё остальное (OUTPUT, INPUT и FORWARD)
 
 Это также обеспечивает защиту от утечки DNS — DNS-запросы ограничены VPN-туннелем.
 

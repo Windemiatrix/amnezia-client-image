@@ -77,6 +77,38 @@ The container expects a standard AmneziaWG configuration file (extended WireGuar
 
 ## VPN Gateway Mode
 
+### LAN Gateway (route network devices through VPN)
+
+Use the container as a network gateway so that other devices (PCs, phones, IoT) route traffic through the VPN tunnel. This requires **host networking** so the container shares the host's IP address.
+
+```bash
+docker run -d \
+  --name=amneziawg-gw \
+  --network=host \
+  --cap-add=NET_ADMIN \
+  --cap-add=SYS_MODULE \
+  --device=/dev/net/tun:/dev/net/tun \
+  --sysctl net.ipv4.conf.all.src_valid_mark=1 \
+  --sysctl net.ipv4.ip_forward=1 \
+  -v /path/to/config:/config \
+  -e KILL_SWITCH=0 \
+  --restart=unless-stopped \
+  ghcr.io/windemiatrix/amnezia-client-image:latest
+```
+
+Then on your router, add a static route:
+
+```
+Destination: 0.0.0.0/0       # or a specific subnet like 10.0.0.0/8
+Gateway:     192.168.1.100   # IP of the host running the container
+```
+
+> **Note:** Disable the kill switch (`KILL_SWITCH=0`) in gateway mode — otherwise incoming traffic from LAN will be blocked.
+
+The entrypoint automatically configures iptables FORWARD rules and NAT MASQUERADE on the VPN interface.
+
+### Container Gateway (route other containers through VPN)
+
 Route traffic from other containers through the VPN tunnel using Docker Compose `network_mode: service:vpn`:
 
 ```yaml
@@ -174,9 +206,11 @@ When `KILL_SWITCH=1` (default), the entrypoint configures iptables rules to prev
 1. Allow loopback traffic
 2. Allow traffic to the AmneziaWG endpoint (IP:port parsed from `.conf`)
 3. Allow traffic through the VPN interface
-4. Allow DNS traffic to servers from `.conf` (if DNS is configured)
-5. Allow established/related connections
-6. **DROP** everything else
+4. Allow ICMPv6 neighbor discovery
+5. Allow DNS traffic to servers from `.conf` (if DNS is configured)
+6. Allow FORWARD through the VPN interface (gateway mode)
+7. Allow established/related connections
+8. **DROP** everything else (OUTPUT, INPUT, and FORWARD)
 
 This also provides DNS leak protection — DNS queries are restricted to the VPN tunnel.
 
