@@ -113,6 +113,23 @@ if [[ -n "$DNS_LINE" ]]; then
     debug "DNS servers: $DNS_SERVERS"
 fi
 
+# --- Handle DNS manually (resolvconf is broken without init system) ----------
+# Strip DNS from the temp config so awg-quick does not call resolvconf.
+# We write /etc/resolv.conf directly instead.
+if [[ -n "$DNS_SERVERS" ]]; then
+    sed -i '/^\s*[Dd][Nn][Ss]\s*=/d' "$TEMP_CONFIG"
+    debug "Stripped DNS line from temp config"
+    # Build /etc/resolv.conf
+    {
+        IFS=',' read -ra DNS_ARRAY <<< "$DNS_SERVERS"
+        for dns in "${DNS_ARRAY[@]}"; do
+            dns="$(echo "$dns" | tr -d ' ')"
+            echo "nameserver $dns"
+        done
+    } > /etc/resolv.conf
+    info "DNS configured: $DNS_SERVERS (written to /etc/resolv.conf)"
+fi
+
 # --- Kill Switch (iptables + ip6tables rules) --------------------------------
 setup_kill_switch() {
     info "Setting up kill switch..."
