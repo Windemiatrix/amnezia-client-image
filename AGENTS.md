@@ -1,5 +1,7 @@
 # AGENTS.md — amnedia-client-image
 
+> **TDD**: см. [TDD.md](TDD.md) — полный Technical Design Document проекта.
+
 ## Цель проекта
 
 Создать Docker-образ клиента AmneziaWG VPN. Образ должен запускать AmneziaWG-пир (клиент) в контейнере и подходить для развёртывания в Docker, Docker Compose, Kubernetes и Home Assistant. Ядро хоста не содержит модуль AmneziaWG, поэтому используется userspace-реализация на Go.
