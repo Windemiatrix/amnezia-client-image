@@ -1,0 +1,16 @@
+# =============================================================================
+# Home Assistant Add-on: Build configuration
+# Pre-built images from GHCR — no local build required
+# =============================================================================
+
+build_from:
+  amd64: "ghcr.io/windemiatrix/amnedia-client-image:latest"
+  aarch64: "ghcr.io/windemiatrix/amnedia-client-image:latest"
+  armv7: "ghcr.io/windemiatrix/amnedia-client-image:latest"
+  armhf: "ghcr.io/windemiatrix/amnedia-client-image:latest"
+
+labels:
+  org.opencontainers.image.title: "AmneziaWG Client"
+  org.opencontainers.image.description: "AmneziaWG VPN client (userspace Go implementation)"
+  org.opencontainers.image.source: "https://github.com/Windemiatrix/amnedia-client-image"
+  org.opencontainers.image.licenses: "MIT"
