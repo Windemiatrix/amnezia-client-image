@@ -74,7 +74,8 @@ COPY --from=builder-tools /build/usr/bin/awg-quick /usr/bin/awg-quick
 # Copy scripts
 COPY scripts/entrypoint.sh  /entrypoint.sh
 COPY scripts/healthcheck.sh /healthcheck.sh
-RUN chmod +x /entrypoint.sh /healthcheck.sh
+COPY scripts/sysctl-wrapper.sh /usr/local/bin/sysctl
+RUN chmod +x /entrypoint.sh /healthcheck.sh /usr/local/bin/sysctl
 
 # Environment defaults
 ENV WG_CONFIG_FILE=/config/wg0.conf \
