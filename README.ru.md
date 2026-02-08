@@ -147,7 +147,7 @@ Entrypoint автоматически настраивает iptables NAT MASQUE
    - **Kill Switch** — блокировка трафика мимо VPN
 5. Запустите дополнение.
 
-Подробная документация: [homeassistant/DOCS.md](homeassistant/DOCS.md)
+Подробная документация: [amneziawg-client/DOCS.md](amneziawg-client/DOCS.md)
 
 ---
 

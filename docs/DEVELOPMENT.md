@@ -14,7 +14,7 @@
 ├── examples/
 │   ├── docker-compose.yml      # Пример для Docker Compose
 │   └── kubernetes/             # Примеры манифестов K8s
-├── homeassistant/              # Конфигурация Home Assistant add-on
+├── amneziawg-client/           # Конфигурация Home Assistant add-on
 ├── .github/
 │   ├── workflows/
 │   │   ├── build.yml           # CI: линтинг, сборка, smoke-тесты
@@ -220,7 +220,7 @@ Tag push → Build multi-arch → Push to GHCR → GitHub Release (goreleaser)
    - соберёт мультиплатформенный образ (amd64, arm64, armv7, armv6),
    - опубликует его в GHCR (`ghcr.io/windemiatrix/amnezia-client-image`),
    - создаст GitHub Release с changelog.
-4. Обновить версию в `homeassistant/config.yaml` при необходимости.
+4. Обновить версию в `amneziawg-client/config.yaml` при необходимости.
 
 ### Semver
 

@@ -147,7 +147,7 @@ Example manifests are in [examples/kubernetes/](examples/kubernetes/):
    - **Kill Switch** — block traffic outside VPN
 5. Start the add-on.
 
-See [homeassistant/DOCS.md](homeassistant/DOCS.md) for detailed documentation.
+See [amneziawg-client/DOCS.md](amneziawg-client/DOCS.md) for detailed documentation.
 
 ---
 
