@@ -1,0 +1,16 @@
+# AmneziaWG config files (contain private keys)
+*.conf
+
+# Environment variables
+.env
+
+# Config directory
+config/
+
+# Build artifacts
+*.tar
+*.gz
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,12 @@
+.git/
+*.md
+examples/
+homeassistant/
+.github/
+.env
+.env.example
+config/
+.gitignore
+.dockerignore
+.goreleaser.yml
+LICENSE
