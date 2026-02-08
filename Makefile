@@ -41,14 +41,14 @@ build-multi: ## Build multi-arch Docker image (no load).
 .PHONY: test
 test: build ## Build and run smoke tests.
 	@echo "==> Smoke test: checking binaries..."
-	@docker run --rm $(IMAGE) which amneziawg-go
-	@docker run --rm $(IMAGE) which awg
-	@docker run --rm $(IMAGE) which awg-quick
+	@docker run --rm --entrypoint which $(IMAGE) amneziawg-go
+	@docker run --rm --entrypoint which $(IMAGE) awg
+	@docker run --rm --entrypoint which $(IMAGE) awg-quick
 	@echo "==> Smoke test: checking versions..."
 	@docker run --rm --entrypoint amneziawg-go $(IMAGE) --version || true
 	@docker run --rm --entrypoint awg $(IMAGE) --version || true
 	@echo "==> Smoke test: entrypoint exits with error on missing config..."
-	@docker run --rm $(IMAGE) 2>&1 | grep -qi "error\|not found\|no such" || true
+	@docker run --rm $(IMAGE) 2>&1 | grep -qi "error\|not found\|no such"
 	@echo "==> Smoke test: healthcheck script exists..."
 	@docker run --rm --entrypoint sh $(IMAGE) -c "test -x /healthcheck.sh"
 	@echo "==> All smoke tests passed."
