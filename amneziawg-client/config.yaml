@@ -3,7 +3,7 @@
 # =============================================================================
 
 name: "AmneziaWG Client"
-version: "1.0.8"
+version: "1.0.9"
 slug: amneziawg-client
 description: "AmneziaWG VPN client as a Home Assistant Add-on"
 url: "https://github.com/Windemiatrix/amnezia-client-image"
