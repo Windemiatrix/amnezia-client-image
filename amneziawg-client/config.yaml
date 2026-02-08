@@ -17,7 +17,7 @@ arch:
 init: false
 startup: services
 
-image: "ghcr.io/windemiatrix/amnezia-client-image/{arch}"
+image: "ghcr.io/windemiatrix/amnezia-client-image"
 
 privileged:
   - NET_ADMIN
