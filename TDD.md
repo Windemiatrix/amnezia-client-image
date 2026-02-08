@@ -67,7 +67,7 @@ amnezia-client-image/
 │   └── kubernetes/
 │       ├── deployment.yaml      # K8s Deployment
 │       └── configmap.yaml       # K8s ConfigMap (без секретов)
-├── homeassistant/
+├── amneziawg-client/
 │   ├── config.yaml              # HA Add-on конфигурация
 │   ├── build.yaml               # HA Add-on build config
 │   ├── DOCS.md                  # Документация add-on
