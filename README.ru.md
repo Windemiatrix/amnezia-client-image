@@ -1,7 +1,7 @@
-# amnedia-client-image
+# amnezia-client-image
 
-[![Build](https://github.com/Windemiatrix/amnedia-client-image/actions/workflows/build.yml/badge.svg)](https://github.com/Windemiatrix/amnedia-client-image/actions/workflows/build.yml)
-[![Release](https://github.com/Windemiatrix/amnedia-client-image/actions/workflows/release.yml/badge.svg)](https://github.com/Windemiatrix/amnedia-client-image/actions/workflows/release.yml)
+[![Build](https://github.com/Windemiatrix/amnezia-client-image/actions/workflows/build.yml/badge.svg)](https://github.com/Windemiatrix/amnezia-client-image/actions/workflows/build.yml)
+[![Release](https://github.com/Windemiatrix/amnezia-client-image/actions/workflows/release.yml/badge.svg)](https://github.com/Windemiatrix/amnezia-client-image/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Docker-образ клиента [AmneziaWG](https://github.com/amnezia-vpn/amneziawg-go) VPN, работающего полностью в пространстве пользователя. Совместим с Docker, Docker Compose, Kubernetes и Home Assistant.
@@ -39,7 +39,7 @@ docker run -d \
   --sysctl net.ipv4.ip_forward=1 \
   -v /path/to/config:/config \
   --restart=unless-stopped \
-  ghcr.io/windemiatrix/amnedia-client-image:latest
+  ghcr.io/windemiatrix/amnezia-client-image:latest
 ```
 
 Поместите файл конфигурации AmneziaWG `.conf` в смонтированную директорию `/config`. Имя файла определяет имя сетевого интерфейса (`wg0.conf` → `wg0`).
@@ -82,7 +82,7 @@ docker run -d \
 ```yaml
 services:
   vpn:
-    image: ghcr.io/windemiatrix/amnedia-client-image:latest
+    image: ghcr.io/windemiatrix/amnezia-client-image:latest
     container_name: amneziawg
     cap_add:
       - NET_ADMIN
@@ -135,7 +135,7 @@ Entrypoint автоматически настраивает iptables NAT MASQUE
 1. Добавьте репозиторий в Home Assistant: **Настройки → Дополнения → Магазин дополнений → ⋮ → Репозитории**
 
    ```
-   https://github.com/Windemiatrix/amnedia-client-image
+   https://github.com/Windemiatrix/amnezia-client-image
    ```
 
 2. Найдите **AmneziaWG Client** в магазине и установите.
@@ -244,7 +244,7 @@ cp .env.example .env
 
 | Переменная                | По умолчанию                                        | Описание                     |
 | ------------------------- | --------------------------------------------------- | ---------------------------- |
-| `IMAGE_NAME`              | `ghcr.io/windemiatrix/amnedia-client-image`         | Имя образа                   |
+| `IMAGE_NAME`              | `ghcr.io/windemiatrix/amnezia-client-image`         | Имя образа                   |
 | `IMAGE_TAG`               | `latest`                                            | Тег образа                   |
 | `PLATFORMS`               | `linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6` | Целевые платформы            |
 | `CONFIG_DIR`              | `./config`                                          | Путь к конфигам на хосте     |
