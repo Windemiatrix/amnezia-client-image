@@ -6,7 +6,7 @@ name: "AmneziaWG Client"
 version: "1.0.0"
 slug: amneziawg-client
 description: "AmneziaWG VPN client as a Home Assistant Add-on"
-url: "https://github.com/Windemiatrix/amnedia-client-image"
+url: "https://github.com/Windemiatrix/amnezia-client-image"
 
 arch:
   - amd64
@@ -17,7 +17,7 @@ arch:
 init: false
 startup: services
 
-image: "ghcr.io/windemiatrix/amnedia-client-image/{arch}"
+image: "ghcr.io/windemiatrix/amnezia-client-image/{arch}"
 
 privileged:
   - NET_ADMIN

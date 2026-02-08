@@ -50,9 +50,9 @@ RUN make -j"$(nproc)" && \
 FROM alpine:${ALPINE_VERSION} AS runtime
 
 # OCI labels
-LABEL org.opencontainers.image.title="amnedia-client-image" \
+LABEL org.opencontainers.image.title="amnezia-client-image" \
       org.opencontainers.image.description="AmneziaWG VPN client (userspace Go implementation)" \
-      org.opencontainers.image.source="https://github.com/Windemiatrix/amnedia-client-image" \
+      org.opencontainers.image.source="https://github.com/Windemiatrix/amnezia-client-image" \
       org.opencontainers.image.licenses="MIT"
 
 # Runtime dependencies for awg-quick (bash script) and networking

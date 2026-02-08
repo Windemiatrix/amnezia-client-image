@@ -33,7 +33,7 @@ spec:
       containers:
         # --- VPN sidecar -------------------------------------------------
         - name: vpn
-          image: ghcr.io/windemiatrix/amnedia-client-image:latest
+          image: ghcr.io/windemiatrix/amnezia-client-image:latest
           securityContext:
             capabilities:
               add:

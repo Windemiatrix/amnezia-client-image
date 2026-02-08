@@ -1,4 +1,4 @@
-# TDD — amnedia-client-image
+# TDD — amnezia-client-image
 
 Technical Design Document для Docker-образа клиента AmneziaWG VPN.
 
@@ -46,7 +46,7 @@ Technical Design Document для Docker-образа клиента AmneziaWG VP
 ### 2.4 Структура репозитория
 
 ```
-amnedia-client-image/
+amnezia-client-image/
 ├── AGENTS.md                    # Инструкции для AI-агентов
 ├── CLAUDE.md                    # Ссылка на AGENTS.md
 ├── TDD.md                       # Этот документ
@@ -170,7 +170,7 @@ Entrypoint копирует конфиг с правами `600` во време
 
 ```
 ┌───────────────┐     ┌──────────────────┐     ┌──────────────┐
-│  Container    │────▶│  amnedia-client  │────▶│  AmneziaWG   │
+│  Container    │────▶│  amnezia-client  │────▶│  AmneziaWG   │
 │  (app)        │     │  (VPN gateway)   │     │  Server      │
 │  network:     │     │  iptables NAT    │     │  (remote)    │
 │  service:vpn  │     │  MASQUERADE      │     │              │
@@ -256,7 +256,7 @@ name: "AmneziaWG Client"
 version: "1.0.0"
 slug: amneziawg-client
 description: "AmneziaWG VPN client as a Home Assistant Add-on"
-url: "https://github.com/<owner>/amnedia-client-image"
+url: "https://github.com/<owner>/amnezia-client-image"
 arch:
   - amd64
   - aarch64
@@ -264,7 +264,7 @@ arch:
   - armhf
 init: false
 startup: services
-image: "ghcr.io/<owner>/amnedia-client-image/{arch}"
+image: "ghcr.io/<owner>/amnezia-client-image/{arch}"
 privileged:
   - NET_ADMIN
   - SYS_MODULE
@@ -353,10 +353,10 @@ configuration:
 
 Теги образа при релизе `v1.2.3`:
 
-- `ghcr.io/<owner>/amnedia-client-image:1.2.3`
-- `ghcr.io/<owner>/amnedia-client-image:1.2`
-- `ghcr.io/<owner>/amnedia-client-image:1`
-- `ghcr.io/<owner>/amnedia-client-image:latest`
+- `ghcr.io/<owner>/amnezia-client-image:1.2.3`
+- `ghcr.io/<owner>/amnezia-client-image:1.2`
+- `ghcr.io/<owner>/amnezia-client-image:1`
+- `ghcr.io/<owner>/amnezia-client-image:latest`
 
 ### 8.2 goreleaser
 
@@ -369,7 +369,7 @@ Goreleaser используется **только для управления �
 ```yaml
 version: 2
 
-project_name: amnedia-client-image
+project_name: amnezia-client-image
 
 # Нет Go-сборки — только release management
 builds: []
@@ -397,7 +397,7 @@ changelog:
 release:
   github:
     owner: "<owner>"
-    name: "amnedia-client-image"
+    name: "amnezia-client-image"
   prerelease: auto
   name_template: "{{ .Tag }}"
 ```
@@ -456,7 +456,7 @@ docker run -d \
   -v /path/to/config:/config \
   -e KILL_SWITCH=1 \
   --restart=unless-stopped \
-  ghcr.io/<owner>/amnedia-client-image:latest
+  ghcr.io/<owner>/amnezia-client-image:latest
 ```
 
 ### 10.2 Docker Compose (examples/docker-compose.yml)
@@ -464,7 +464,7 @@ docker run -d \
 ```yaml
 services:
   vpn:
-    image: ghcr.io/<owner>/amnedia-client-image:latest
+    image: ghcr.io/<owner>/amnezia-client-image:latest
     container_name: amneziawg
     cap_add:
       - NET_ADMIN
@@ -593,7 +593,7 @@ clean          ## Remove built images and stopped containers
 Переменные через `?=` (переопределяемые из `.env`):
 
 ```makefile
-IMAGE_NAME  ?= ghcr.io/<owner>/amnedia-client-image
+IMAGE_NAME  ?= ghcr.io/<owner>/amnezia-client-image
 IMAGE_TAG   ?= dev
 PLATFORMS   ?= linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
 CONFIG_DIR  ?= ./config
@@ -638,7 +638,7 @@ entrypoint.sh
     │ Монтирует .conf
     ▼
 ┌──────────────────────────────────────────────────┐
-│  Docker Container (amnedia-client-image)         │
+│  Docker Container (amnezia-client-image)         │
 │                                                  │
 │  entrypoint.sh                                   │
 │    │                                             │

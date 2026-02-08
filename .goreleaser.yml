@@ -1,6 +1,6 @@
 version: 2
 
-project_name: amnedia-client-image
+project_name: amnezia-client-image
 
 # No Go builds — release management only (Docker image built via buildx)
 builds:
@@ -29,6 +29,6 @@ changelog:
 release:
   github:
     owner: "Windemiatrix"
-    name: "amnedia-client-image"
+    name: "amnezia-client-image"
   prerelease: auto
   name_template: "{{ .Tag }}"

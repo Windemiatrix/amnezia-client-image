@@ -12,7 +12,7 @@ AmneziaWG is a WireGuard-based VPN protocol with additional traffic obfuscation 
 2. Click the **⋮** menu (top right) → **Repositories**.
 3. Add the repository URL:
    ```
-   https://github.com/Windemiatrix/amnedia-client-image
+   https://github.com/Windemiatrix/amnezia-client-image
    ```
 4. Find **AmneziaWG Client** in the store and click **Install**.
 
@@ -117,5 +117,5 @@ If any check fails, the add-on is marked as **unhealthy**.
 
 ## Support
 
-- [GitHub Issues](https://github.com/Windemiatrix/amnedia-client-image/issues)
+- [GitHub Issues](https://github.com/Windemiatrix/amnezia-client-image/issues)
 - [AmneziaWG Documentation](https://docs.amnezia.org/)
