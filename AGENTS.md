@@ -1,4 +1,4 @@
-# AGENTS.md — amnedia-client-image
+# AGENTS.md — amnezia-client-image
 
 > **TDD**: см. [TDD.md](TDD.md) — полный Technical Design Document проекта.
 

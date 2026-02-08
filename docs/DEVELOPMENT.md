@@ -42,8 +42,8 @@
 
 ```bash
 # 1. Клонировать репозиторий
-git clone https://github.com/windemiatrix/amnedia-client-image.git
-cd amnedia-client-image
+git clone https://github.com/windemiatrix/amnezia-client-image.git
+cd amnezia-client-image
 
 # 2. Скопировать шаблон переменных окружения
 cp .env.example .env
@@ -67,39 +67,39 @@ make logs
 
 ### Build
 
-| Команда          | Описание                                          |
-| ---------------- | ------------------------------------------------- |
-| `make build`     | Сборка образа для текущей платформы               |
+| Команда            | Описание                                          |
+| ------------------ | ------------------------------------------------- |
+| `make build`       | Сборка образа для текущей платформы               |
 | `make build-multi` | Сборка мультиплатформенного образа (без загрузки) |
 
 ### Test
 
-| Команда       | Описание                               |
-| ------------- | -------------------------------------- |
-| `make test`   | Сборка + smoke-тесты (наличие бинарников, обработка ошибок) |
-| `make lint`   | Hadolint (Dockerfile) + ShellCheck (bash-скрипты) |
+| Команда     | Описание                                                    |
+| ----------- | ----------------------------------------------------------- |
+| `make test` | Сборка + smoke-тесты (наличие бинарников, обработка ошибок) |
+| `make lint` | Hadolint (Dockerfile) + ShellCheck (bash-скрипты)           |
 
 ### Release
 
-| Команда        | Описание                                       |
-| -------------- | ---------------------------------------------- |
+| Команда        | Описание                                               |
+| -------------- | ------------------------------------------------------ |
 | `make push`    | Сборка и публикация мультиплатформенного образа в GHCR |
-| `make release` | Запуск goreleaser (требуется `GITHUB_TOKEN`)   |
+| `make release` | Запуск goreleaser (требуется `GITHUB_TOKEN`)           |
 
 ### Development
 
-| Команда       | Описание                              |
-| ------------- | ------------------------------------- |
-| `make run`    | Сборка + запуск контейнера в фоне     |
-| `make stop`   | Остановка и удаление контейнера       |
-| `make logs`   | Просмотр логов контейнера (follow)    |
-| `make shell`  | Открыть bash-оболочку внутри контейнера |
+| Команда      | Описание                                |
+| ------------ | --------------------------------------- |
+| `make run`   | Сборка + запуск контейнера в фоне       |
+| `make stop`  | Остановка и удаление контейнера         |
+| `make logs`  | Просмотр логов контейнера (follow)      |
+| `make shell` | Открыть bash-оболочку внутри контейнера |
 
 ### Clean
 
-| Команда       | Описание                              |
-| ------------- | ------------------------------------- |
-| `make clean`  | Остановка контейнера + удаление образа |
+| Команда      | Описание                               |
+| ------------ | -------------------------------------- |
+| `make clean` | Остановка контейнера + удаление образа |
 
 ### Переменные окружения
 
@@ -115,14 +115,14 @@ make build IMAGE_TAG=dev
 
 Доступные переменные (см. `.env.example`):
 
-| Переменная                  | По умолчанию                                   |
-| --------------------------- | ---------------------------------------------- |
-| `IMAGE_NAME`                | `ghcr.io/windemiatrix/amnedia-client-image`    |
-| `IMAGE_TAG`                 | `latest`                                       |
-| `PLATFORMS`                 | `linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6` |
-| `CONFIG_DIR`                | `./config`                                     |
-| `AMNEZIAWG_GO_VERSION`     | `v0.2.16`                                      |
-| `AMNEZIAWG_TOOLS_VERSION`  | `v1.0.20250903`                                |
+| Переменная                | По умолчанию                                        |
+| ------------------------- | --------------------------------------------------- |
+| `IMAGE_NAME`              | `ghcr.io/windemiatrix/amnezia-client-image`         |
+| `IMAGE_TAG`               | `latest`                                            |
+| `PLATFORMS`               | `linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6` |
+| `CONFIG_DIR`              | `./config`                                          |
+| `AMNEZIAWG_GO_VERSION`    | `v0.2.16`                                           |
+| `AMNEZIAWG_TOOLS_VERSION` | `v1.0.20250903`                                     |
 
 ## Процесс разработки
 
@@ -155,7 +155,7 @@ make build IMAGE_TAG=dev
 
 | Тип     | Когда использовать                    |
 | ------- | ------------------------------------- |
-| `feat`  | Новая функциональность               |
+| `feat`  | Новая функциональность                |
 | `fix`   | Исправление бага                      |
 | `docs`  | Изменения в документации              |
 | `chore` | Служебные изменения (CI, зависимости) |
@@ -218,7 +218,7 @@ Tag push → Build multi-arch → Push to GHCR → GitHub Release (goreleaser)
    ```
 3. GitHub Actions автоматически:
    - соберёт мультиплатформенный образ (amd64, arm64, armv7, armv6),
-   - опубликует его в GHCR (`ghcr.io/windemiatrix/amnedia-client-image`),
+   - опубликует его в GHCR (`ghcr.io/windemiatrix/amnezia-client-image`),
    - создаст GitHub Release с changelog.
 4. Обновить версию в `homeassistant/config.yaml` при необходимости.
 

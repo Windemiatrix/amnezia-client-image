@@ -45,25 +45,25 @@ jobs:
         with:
           context: .
           load: true
-          tags: amnedia-client-image:test
+          tags: amnezia-client-image:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Smoke test — binaries exist
         run: |
-          docker run --rm --entrypoint which amnedia-client-image:test amneziawg-go
-          docker run --rm --entrypoint which amnedia-client-image:test awg
-          docker run --rm --entrypoint which amnedia-client-image:test awg-quick
+          docker run --rm --entrypoint which amnezia-client-image:test amneziawg-go
+          docker run --rm --entrypoint which amnezia-client-image:test awg
+          docker run --rm --entrypoint which amnezia-client-image:test awg-quick
 
       - name: Smoke test — versions
         run: |
-          docker run --rm --entrypoint amneziawg-go amnedia-client-image:test --version || true
-          docker run --rm --entrypoint awg amnedia-client-image:test --version || true
+          docker run --rm --entrypoint amneziawg-go amnezia-client-image:test --version || true
+          docker run --rm --entrypoint awg amnezia-client-image:test --version || true
 
       - name: Smoke test — entrypoint fails on missing config
         run: |
-          docker run --rm amnedia-client-image:test 2>&1 | grep -qi "error\|not found\|no such"
+          docker run --rm amnezia-client-image:test 2>&1 | grep -qi "error\|not found\|no such"
 
       - name: Smoke test — healthcheck script exists
         run: |
-          docker run --rm --entrypoint sh amnedia-client-image:test -c "test -x /healthcheck.sh"
+          docker run --rm --entrypoint sh amnezia-client-image:test -c "test -x /healthcheck.sh"

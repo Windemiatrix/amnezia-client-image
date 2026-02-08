@@ -3,7 +3,7 @@ include .env
 export
 
 # Default values (can be overridden via .env or environment)
-IMAGE_NAME  ?= ghcr.io/windemiatrix/amnedia-client-image
+IMAGE_NAME  ?= ghcr.io/windemiatrix/amnezia-client-image
 IMAGE_TAG   ?= latest
 PLATFORMS   ?= linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
 CONFIG_DIR  ?= ./config
