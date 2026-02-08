@@ -24,6 +24,7 @@ WG_CONFIG_FILE="${WG_CONFIG_FILE:-/config/wg0.conf}"
 LOG_LEVEL="${LOG_LEVEL:-info}"
 KILL_SWITCH="${KILL_SWITCH:-1}"
 HEALTH_CHECK_HOST="${HEALTH_CHECK_HOST:-1.1.1.1}"
+LOCAL_SUBNETS="${LOCAL_SUBNETS:-}"
 
 # --- Logging helpers ---------------------------------------------------------
 log()   { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
@@ -40,12 +41,14 @@ if [[ -f /data/options.json ]] && command -v jq &>/dev/null; then
     HA_LOG_LEVEL="$(jq -r '.log_level // empty' /data/options.json 2>/dev/null)" || true
     HA_HEALTH_CHECK="$(jq -r '.health_check_host // empty' /data/options.json 2>/dev/null)" || true
     HA_KILL_SWITCH="$(jq -r '.kill_switch // empty' /data/options.json 2>/dev/null)" || true
+    HA_LOCAL_SUBNETS="$(jq -r '(.local_subnets // []) | join(",")' /data/options.json 2>/dev/null)" || true
 
     [[ -n "$HA_CONFIG_FILE" ]] && WG_CONFIG_FILE="/config/$HA_CONFIG_FILE"
     [[ -n "$HA_LOG_LEVEL" ]] && LOG_LEVEL="$HA_LOG_LEVEL"
     [[ -n "$HA_HEALTH_CHECK" ]] && HEALTH_CHECK_HOST="$HA_HEALTH_CHECK"
     [[ "$HA_KILL_SWITCH" == "true" ]] && KILL_SWITCH=1
     [[ "$HA_KILL_SWITCH" == "false" ]] && KILL_SWITCH=0
+    [[ -n "$HA_LOCAL_SUBNETS" ]] && LOCAL_SUBNETS="$HA_LOCAL_SUBNETS"
 fi
 
 # --- Enable trace mode for debug ---------------------------------------------
@@ -71,6 +74,7 @@ debug "WG_CONFIG_FILE=$WG_CONFIG_FILE"
 debug "LOG_LEVEL=$LOG_LEVEL"
 debug "KILL_SWITCH=$KILL_SWITCH"
 debug "HEALTH_CHECK_HOST=$HEALTH_CHECK_HOST"
+debug "LOCAL_SUBNETS=$LOCAL_SUBNETS"
 
 if [[ ! -f "$WG_CONFIG_FILE" ]]; then
     error "Configuration file not found: $WG_CONFIG_FILE"
@@ -215,14 +219,35 @@ setup_kill_switch() {
         debug "Kill switch: endpoint $ENDPOINT_IP:$ENDPOINT_PORT allowed"
     fi
 
-    # 3. Allow traffic through VPN interface (IPv4 + IPv6)
+    # 3. Allow traffic to local subnets (bypass VPN)
+    if [[ -n "$LOCAL_SUBNETS" ]]; then
+        IFS=',' read -ra KS_SUBNET_ARRAY <<< "$LOCAL_SUBNETS"
+        for subnet in "${KS_SUBNET_ARRAY[@]}"; do
+            subnet="$(echo "$subnet" | tr -d ' ')"
+            [[ -z "$subnet" ]] && continue
+            if echo "$subnet" | grep -qE ':'; then
+                ip6t -A OUTPUT -d "$subnet" -j ACCEPT
+                ip6t -A INPUT -s "$subnet" -j ACCEPT
+                ip6t -A FORWARD -s "$subnet" -j ACCEPT
+                ip6t -A FORWARD -d "$subnet" -j ACCEPT
+            else
+                iptables -A OUTPUT -d "$subnet" -j ACCEPT
+                iptables -A INPUT -s "$subnet" -j ACCEPT
+                iptables -A FORWARD -s "$subnet" -j ACCEPT
+                iptables -A FORWARD -d "$subnet" -j ACCEPT
+            fi
+            debug "Kill switch: local subnet $subnet allowed"
+        done
+    fi
+
+    # 4. Allow traffic through VPN interface (IPv4 + IPv6)
     iptables -A OUTPUT -o "$WG_INTERFACE" -j ACCEPT
     iptables -A INPUT -i "$WG_INTERFACE" -j ACCEPT
     ip6t -A OUTPUT -o "$WG_INTERFACE" -j ACCEPT
     ip6t -A INPUT -i "$WG_INTERFACE" -j ACCEPT
     debug "Kill switch: VPN interface $WG_INTERFACE allowed (IPv4+IPv6)"
 
-    # 4. Allow ICMPv6 essential messages (neighbor discovery, etc.)
+    # 5. Allow ICMPv6 essential messages (neighbor discovery, etc.)
     ip6t -A OUTPUT -p icmpv6 --icmpv6-type neighbor-solicitation -j ACCEPT
     ip6t -A OUTPUT -p icmpv6 --icmpv6-type neighbor-advertisement -j ACCEPT
     ip6t -A OUTPUT -p icmpv6 --icmpv6-type router-solicitation -j ACCEPT
@@ -231,7 +256,7 @@ setup_kill_switch() {
     ip6t -A INPUT -p icmpv6 --icmpv6-type router-advertisement -j ACCEPT
     debug "Kill switch: ICMPv6 neighbor discovery allowed"
 
-    # 5. Allow DNS traffic to configured DNS servers (IPv4 + IPv6)
+    # 6. Allow DNS traffic to configured DNS servers (IPv4 + IPv6)
     if [[ -n "$DNS_SERVERS" ]]; then
         IFS=',' read -ra DNS_ARRAY <<< "$DNS_SERVERS"
         for dns in "${DNS_ARRAY[@]}"; do
@@ -253,21 +278,21 @@ setup_kill_switch() {
         done
     fi
 
-    # 6. Allow FORWARD through VPN interface (gateway mode, IPv4 + IPv6)
+    # 7. Allow FORWARD through VPN interface (gateway mode, IPv4 + IPv6)
     iptables -A FORWARD -i "$WG_INTERFACE" -j ACCEPT
     iptables -A FORWARD -o "$WG_INTERFACE" -j ACCEPT
     ip6t -A FORWARD -i "$WG_INTERFACE" -j ACCEPT
     ip6t -A FORWARD -o "$WG_INTERFACE" -j ACCEPT
     debug "Kill switch: FORWARD through $WG_INTERFACE allowed (IPv4+IPv6)"
 
-    # 7. Allow established/related connections (IPv4 + IPv6)
+    # 8. Allow established/related connections (IPv4 + IPv6)
     iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     ip6t -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     ip6t -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     debug "Kill switch: established/related allowed (IPv4+IPv6)"
 
-    # 8. Drop everything else (IPv4 + IPv6)
+    # 9. Drop everything else (IPv4 + IPv6)
     iptables -A OUTPUT -j DROP
     iptables -A INPUT -j DROP
     iptables -A FORWARD -j DROP
@@ -293,10 +318,38 @@ else
     info "Kill switch disabled"
 fi
 
+# --- Save default gateway before VPN overwrites it ---------------------------
+DEFAULT_GW=""
+DEFAULT_GW_IFACE=""
+if [[ -n "$LOCAL_SUBNETS" ]]; then
+    DEFAULT_GW="$(ip route show default 2>/dev/null | awk '/default/ {print $3; exit}')" || true
+    DEFAULT_GW_IFACE="$(ip route show default 2>/dev/null | awk '/default/ {print $5; exit}')" || true
+    if [[ -n "$DEFAULT_GW" ]]; then
+        info "Saved default gateway: $DEFAULT_GW via $DEFAULT_GW_IFACE"
+    else
+        warn "Could not detect default gateway — local subnet routes will not be added"
+    fi
+fi
+
 # --- Bring up AmneziaWG interface --------------------------------------------
 info "Bringing up interface $WG_INTERFACE..."
 WG_QUICK_USERSPACE_IMPLEMENTATION=amneziawg-go awg-quick up "$TEMP_CONFIG"
 info "Interface $WG_INTERFACE is up"
+
+# --- Add routes for local subnets bypassing VPN ------------------------------
+if [[ -n "$LOCAL_SUBNETS" && -n "$DEFAULT_GW" ]]; then
+    info "Adding local subnet routes (bypassing VPN)..."
+    IFS=',' read -ra SUBNET_ARRAY <<< "$LOCAL_SUBNETS"
+    for subnet in "${SUBNET_ARRAY[@]}"; do
+        subnet="$(echo "$subnet" | tr -d ' ')"
+        [[ -z "$subnet" ]] && continue
+        if ip route add "$subnet" via "$DEFAULT_GW" dev "$DEFAULT_GW_IFACE" 2>/dev/null; then
+            info "Route added: $subnet via $DEFAULT_GW dev $DEFAULT_GW_IFACE"
+        else
+            debug "Route for $subnet already exists or could not be added"
+        fi
+    done
+fi
 
 # --- Setup forwarding and NAT for gateway mode (IPv4 + IPv6) -----------------
 # Allow FORWARD: LAN → VPN and VPN → LAN (established/related)
