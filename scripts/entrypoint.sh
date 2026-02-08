@@ -4,13 +4,16 @@ set -euo pipefail
 # --- Error handler: delay before exit to prevent rapid restart loops ---------
 # Without this, HA watchdog restarts the container instantly on failure,
 # hitting the rate limit (10 restarts in 30 min).
-on_fatal() {
+# Uses EXIT trap (not ERR) because ERR only fires on command failures,
+# NOT on explicit 'exit 1' calls (e.g., config-not-found).
+on_exit() {
     local code=$?
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] Container failed (exit code $code), sleeping 30s to prevent rapid restarts..." >&2
-    sleep 30
-    exit "$code"
+    if [[ $code -ne 0 ]]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] Container failed (exit code $code), sleeping 30s to prevent rapid restarts..." >&2
+        sleep 30
+    fi
 }
-trap on_fatal ERR
+trap on_exit EXIT
 
 # =============================================================================
 # entrypoint.sh — AmneziaWG VPN client entrypoint
