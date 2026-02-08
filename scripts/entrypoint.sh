@@ -189,10 +189,12 @@ setup_kill_switch() {
     # Flush existing IPv4 rules
     iptables -F OUTPUT 2>/dev/null || true
     iptables -F INPUT 2>/dev/null || true
+    iptables -F FORWARD 2>/dev/null || true
 
     # Flush existing IPv6 rules
     ip6t -F OUTPUT 2>/dev/null
     ip6t -F INPUT 2>/dev/null
+    ip6t -F FORWARD 2>/dev/null
 
     # 1. Allow loopback (IPv4 + IPv6)
     iptables -A OUTPUT -o lo -j ACCEPT
@@ -251,18 +253,27 @@ setup_kill_switch() {
         done
     fi
 
-    # 6. Allow established/related connections (IPv4 + IPv6)
+    # 6. Allow FORWARD through VPN interface (gateway mode, IPv4 + IPv6)
+    iptables -A FORWARD -i "$WG_INTERFACE" -j ACCEPT
+    iptables -A FORWARD -o "$WG_INTERFACE" -j ACCEPT
+    ip6t -A FORWARD -i "$WG_INTERFACE" -j ACCEPT
+    ip6t -A FORWARD -o "$WG_INTERFACE" -j ACCEPT
+    debug "Kill switch: FORWARD through $WG_INTERFACE allowed (IPv4+IPv6)"
+
+    # 7. Allow established/related connections (IPv4 + IPv6)
     iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     ip6t -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     ip6t -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     debug "Kill switch: established/related allowed (IPv4+IPv6)"
 
-    # 7. Drop everything else (IPv4 + IPv6)
+    # 8. Drop everything else (IPv4 + IPv6)
     iptables -A OUTPUT -j DROP
     iptables -A INPUT -j DROP
+    iptables -A FORWARD -j DROP
     ip6t -A OUTPUT -j DROP
     ip6t -A INPUT -j DROP
+    ip6t -A FORWARD -j DROP
     info "Kill switch enabled — all non-VPN traffic will be blocked (IPv4+IPv6)"
 }
 
@@ -287,7 +298,15 @@ info "Bringing up interface $WG_INTERFACE..."
 WG_QUICK_USERSPACE_IMPLEMENTATION=amneziawg-go awg-quick up "$TEMP_CONFIG"
 info "Interface $WG_INTERFACE is up"
 
-# --- Setup NAT MASQUERADE for gateway mode (IPv4 + IPv6) --------------------
+# --- Setup forwarding and NAT for gateway mode (IPv4 + IPv6) -----------------
+# Allow FORWARD: LAN → VPN and VPN → LAN (established/related)
+iptables -A FORWARD -i "$WG_INTERFACE" -j ACCEPT
+iptables -A FORWARD -o "$WG_INTERFACE" -j ACCEPT
+ip6tables -A FORWARD -i "$WG_INTERFACE" -j ACCEPT 2>/dev/null || true
+ip6tables -A FORWARD -o "$WG_INTERFACE" -j ACCEPT 2>/dev/null || true
+debug "FORWARD rules added for $WG_INTERFACE (IPv4+IPv6)"
+
+# NAT MASQUERADE for traffic leaving through VPN
 iptables -t nat -A POSTROUTING -o "$WG_INTERFACE" -j MASQUERADE
 ip6tables -t nat -A POSTROUTING -o "$WG_INTERFACE" -j MASQUERADE 2>/dev/null || true
 debug "NAT MASQUERADE enabled on $WG_INTERFACE (IPv4+IPv6)"
