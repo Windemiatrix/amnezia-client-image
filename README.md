@@ -50,12 +50,12 @@ Place your AmneziaWG `.conf` file inside the mounted `/config` directory. The fi
 
 ### Environment Variables
 
-| Variable            | Default            | Description                                                  |
-| ------------------- | ------------------ | ------------------------------------------------------------ |
-| `WG_CONFIG_FILE`    | `/config/wg0.conf` | Path to the AmneziaWG configuration file                     |
-| `LOG_LEVEL`         | `info`             | Logging verbosity: `debug`, `info`, `warn`, `error`          |
-| `KILL_SWITCH`       | `1`                | Block traffic outside VPN: `1` — on, `0` — off               |
-| `HEALTH_CHECK_HOST` | `1.1.1.1`          | IP address to ping through VPN for health checks             |
+| Variable            | Default            | Description                                                                   |
+| ------------------- | ------------------ | ----------------------------------------------------------------------------- |
+| `WG_CONFIG_FILE`    | `/config/wg0.conf` | Path to the AmneziaWG configuration file                                      |
+| `LOG_LEVEL`         | `info`             | Logging verbosity: `debug`, `info`, `warn`, `error`                           |
+| `KILL_SWITCH`       | `1`                | Block traffic outside VPN: `1` — on, `0` — off                                |
+| `HEALTH_CHECK_HOST` | `1.1.1.1`          | IP address to ping through VPN for health checks                              |
 | `LOCAL_SUBNETS`     | *(empty)*          | Comma-separated CIDRs to exclude from VPN (e.g., `192.168.0.0/16,10.0.0.0/8`) |
 
 ### Required Runtime Parameters

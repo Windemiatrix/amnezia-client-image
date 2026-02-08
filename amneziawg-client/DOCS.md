@@ -51,12 +51,12 @@ PersistentKeepalive = 25
 
 ### Options
 
-| Option              | Default                                          | Description                                            |
-| ------------------- | ------------------------------------------------ | ------------------------------------------------------ |
-| `config_file`       | `wg0.conf`                                       | Name of the config file in `/config`                   |
-| `log_level`         | `info`                                           | Logging verbosity: `debug`, `info`, `warn`, `error`    |
-| `health_check_host` | `1.1.1.1`                                        | IP address to ping through VPN for health verification |
-| `kill_switch`       | `true`                                           | Block all traffic if VPN tunnel goes down              |
+| Option              | Default                                         | Description                                            |
+| ------------------- | ----------------------------------------------- | ------------------------------------------------------ |
+| `config_file`       | `wg0.conf`                                      | Name of the config file in `/config`                   |
+| `log_level`         | `info`                                          | Logging verbosity: `debug`, `info`, `warn`, `error`    |
+| `health_check_host` | `1.1.1.1`                                       | IP address to ping through VPN for health verification |
+| `kill_switch`       | `true`                                          | Block all traffic if VPN tunnel goes down              |
 | `local_subnets`     | `192.168.0.0/16`, `10.0.0.0/8`, `172.16.0.0/12` | Subnets to exclude from VPN routing (keep LAN access)  |
 
 ### Example Configuration
