@@ -3,7 +3,8 @@ version: 2
 project_name: amnedia-client-image
 
 # No Go builds — release management only (Docker image built via buildx)
-builds: []
+builds:
+  - skip: true
 
 changelog:
   use: github
