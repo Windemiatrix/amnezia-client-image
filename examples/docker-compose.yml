@@ -1,0 +1,39 @@
+# =============================================================================
+# Docker Compose — AmneziaWG VPN client with app routing through VPN
+#
+# Usage:
+#   1. Place your AmneziaWG .conf file in ./config/ directory
+#   2. docker compose -f examples/docker-compose.yml up -d
+#
+# The "app" service routes all traffic through the VPN container.
+# Replace it with your own application.
+# =============================================================================
+
+services:
+  vpn:
+    image: ghcr.io/windemiatrix/amnedia-client-image:latest
+    container_name: amneziawg
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.ip_forward=1
+    volumes:
+      - ./config:/config
+    environment:
+      - KILL_SWITCH=1
+      - LOG_LEVEL=info
+      - HEALTH_CHECK_HOST=1.1.1.1
+    restart: unless-stopped
+
+  # Example: container that routes all traffic through the VPN tunnel
+  app:
+    image: curlimages/curl:latest
+    network_mode: service:vpn
+    depends_on:
+      vpn:
+        condition: service_healthy
+    command: ["curl", "-s", "https://ifconfig.me"]

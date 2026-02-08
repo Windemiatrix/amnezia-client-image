@@ -1,0 +1,94 @@
+# =============================================================================
+# Kubernetes Deployment — AmneziaWG VPN sidecar pattern
+#
+# The VPN client runs as a sidecar container alongside the main application.
+# All traffic from the app container is routed through the VPN tunnel.
+#
+# Prerequisites:
+#   - Create a Secret with your AmneziaWG config (see configmap.yaml for template)
+#   - Ensure the cluster allows privileged containers or NET_ADMIN capability
+#
+# Usage:
+#   kubectl apply -f configmap.yaml
+#   kubectl create secret generic amneziawg-config \
+#     --from-file=wg0.conf=/path/to/your/wg0.conf
+#   kubectl apply -f deployment.yaml
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-with-vpn
+  labels:
+    app: app-with-vpn
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-with-vpn
+  template:
+    metadata:
+      labels:
+        app: app-with-vpn
+    spec:
+      containers:
+        # --- VPN sidecar -------------------------------------------------
+        - name: vpn
+          image: ghcr.io/windemiatrix/amnedia-client-image:latest
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - SYS_MODULE
+          env:
+            - name: KILL_SWITCH
+              value: "1"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: HEALTH_CHECK_HOST
+              value: "1.1.1.1"
+          volumeMounts:
+            - name: vpn-config
+              mountPath: /config
+              readOnly: true
+            - name: tun-device
+              mountPath: /dev/net/tun
+          livenessProbe:
+            exec:
+              command:
+                - /healthcheck.sh
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
+        # --- Main application --------------------------------------------
+        - name: app
+          image: curlimages/curl:latest
+          command:
+            - /bin/sh
+            - -c
+            - "while true; do curl -s https://ifconfig.me; echo; sleep 300; done"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+
+      volumes:
+        - name: vpn-config
+          secret:
+            secretName: amneziawg-config
+            defaultMode: 0600
+        - name: tun-device
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
