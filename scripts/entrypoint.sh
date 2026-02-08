@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# --- Error handler: delay before exit to prevent rapid restart loops ---------
+# Without this, HA watchdog restarts the container instantly on failure,
+# hitting the rate limit (10 restarts in 30 min).
+on_fatal() {
+    local code=$?
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] Container failed (exit code $code), sleeping 30s to prevent rapid restarts..." >&2
+    sleep 30
+    exit "$code"
+}
+trap on_fatal ERR
+
 # =============================================================================
 # entrypoint.sh — AmneziaWG VPN client entrypoint
 # =============================================================================
@@ -18,9 +29,37 @@ info()  { log "[INFO]  $*"; }
 warn()  { log "[WARN]  $*"; }
 error() { log "[ERROR] $*"; }
 
+# --- Read Home Assistant options if available --------------------------------
+# HA passes add-on options via /data/options.json, NOT environment variables.
+if [[ -f /data/options.json ]] && command -v jq &>/dev/null; then
+    info "Home Assistant environment detected, reading /data/options.json..."
+    HA_CONFIG_FILE="$(jq -r '.config_file // empty' /data/options.json 2>/dev/null)" || true
+    HA_LOG_LEVEL="$(jq -r '.log_level // empty' /data/options.json 2>/dev/null)" || true
+    HA_HEALTH_CHECK="$(jq -r '.health_check_host // empty' /data/options.json 2>/dev/null)" || true
+    HA_KILL_SWITCH="$(jq -r '.kill_switch // empty' /data/options.json 2>/dev/null)" || true
+
+    [[ -n "$HA_CONFIG_FILE" ]] && WG_CONFIG_FILE="/config/$HA_CONFIG_FILE"
+    [[ -n "$HA_LOG_LEVEL" ]] && LOG_LEVEL="$HA_LOG_LEVEL"
+    [[ -n "$HA_HEALTH_CHECK" ]] && HEALTH_CHECK_HOST="$HA_HEALTH_CHECK"
+    [[ "$HA_KILL_SWITCH" == "true" ]] && KILL_SWITCH=1
+    [[ "$HA_KILL_SWITCH" == "false" ]] && KILL_SWITCH=0
+fi
+
 # --- Enable trace mode for debug ---------------------------------------------
 if [[ "$LOG_LEVEL" == "debug" ]]; then
     set -x
+fi
+
+# --- Ensure TUN device exists ------------------------------------------------
+if [[ ! -e /dev/net/tun ]]; then
+    info "TUN device not found, creating /dev/net/tun..."
+    mkdir -p /dev/net
+    if mknod /dev/net/tun c 10 200 2>/dev/null; then
+        chmod 600 /dev/net/tun
+        info "TUN device created"
+    else
+        warn "Cannot create /dev/net/tun — ensure the container has --device /dev/net/tun or is privileged"
+    fi
 fi
 
 # --- Validate configuration --------------------------------------------------
@@ -134,26 +173,36 @@ fi
 setup_kill_switch() {
     info "Setting up kill switch..."
 
+    # Check if ip6tables is functional (IPv6 may not be available)
+    local has_ip6=true
+    if ! ip6tables -L -n >/dev/null 2>&1; then
+        warn "ip6tables not available, IPv6 firewall rules will be skipped"
+        has_ip6=false
+    fi
+
+    # Helper: run ip6tables only if available
+    ip6t() { if [[ "$has_ip6" == "true" ]]; then ip6tables "$@"; fi; }
+
     # Flush existing IPv4 rules
     iptables -F OUTPUT 2>/dev/null || true
     iptables -F INPUT 2>/dev/null || true
 
     # Flush existing IPv6 rules
-    ip6tables -F OUTPUT 2>/dev/null || true
-    ip6tables -F INPUT 2>/dev/null || true
+    ip6t -F OUTPUT 2>/dev/null
+    ip6t -F INPUT 2>/dev/null
 
     # 1. Allow loopback (IPv4 + IPv6)
     iptables -A OUTPUT -o lo -j ACCEPT
     iptables -A INPUT -i lo -j ACCEPT
-    ip6tables -A OUTPUT -o lo -j ACCEPT
-    ip6tables -A INPUT -i lo -j ACCEPT
+    ip6t -A OUTPUT -o lo -j ACCEPT
+    ip6t -A INPUT -i lo -j ACCEPT
     debug "Kill switch: loopback allowed (IPv4+IPv6)"
 
     # 2. Allow traffic to AmneziaWG endpoint
     if [[ -n "$ENDPOINT_IP" && -n "$ENDPOINT_PORT" ]]; then
         if [[ "$ENDPOINT_IS_IPV6" == "true" ]]; then
-            ip6tables -A OUTPUT -d "$ENDPOINT_IP" -p udp --dport "$ENDPOINT_PORT" -j ACCEPT
-            ip6tables -A INPUT -s "$ENDPOINT_IP" -p udp --sport "$ENDPOINT_PORT" -j ACCEPT
+            ip6t -A OUTPUT -d "$ENDPOINT_IP" -p udp --dport "$ENDPOINT_PORT" -j ACCEPT
+            ip6t -A INPUT -s "$ENDPOINT_IP" -p udp --sport "$ENDPOINT_PORT" -j ACCEPT
         else
             iptables -A OUTPUT -d "$ENDPOINT_IP" -p udp --dport "$ENDPOINT_PORT" -j ACCEPT
             iptables -A INPUT -s "$ENDPOINT_IP" -p udp --sport "$ENDPOINT_PORT" -j ACCEPT
@@ -164,17 +213,17 @@ setup_kill_switch() {
     # 3. Allow traffic through VPN interface (IPv4 + IPv6)
     iptables -A OUTPUT -o "$WG_INTERFACE" -j ACCEPT
     iptables -A INPUT -i "$WG_INTERFACE" -j ACCEPT
-    ip6tables -A OUTPUT -o "$WG_INTERFACE" -j ACCEPT
-    ip6tables -A INPUT -i "$WG_INTERFACE" -j ACCEPT
+    ip6t -A OUTPUT -o "$WG_INTERFACE" -j ACCEPT
+    ip6t -A INPUT -i "$WG_INTERFACE" -j ACCEPT
     debug "Kill switch: VPN interface $WG_INTERFACE allowed (IPv4+IPv6)"
 
     # 4. Allow ICMPv6 essential messages (neighbor discovery, etc.)
-    ip6tables -A OUTPUT -p icmpv6 --icmpv6-type neighbor-solicitation -j ACCEPT
-    ip6tables -A OUTPUT -p icmpv6 --icmpv6-type neighbor-advertisement -j ACCEPT
-    ip6tables -A OUTPUT -p icmpv6 --icmpv6-type router-solicitation -j ACCEPT
-    ip6tables -A INPUT -p icmpv6 --icmpv6-type neighbor-solicitation -j ACCEPT
-    ip6tables -A INPUT -p icmpv6 --icmpv6-type neighbor-advertisement -j ACCEPT
-    ip6tables -A INPUT -p icmpv6 --icmpv6-type router-advertisement -j ACCEPT
+    ip6t -A OUTPUT -p icmpv6 --icmpv6-type neighbor-solicitation -j ACCEPT
+    ip6t -A OUTPUT -p icmpv6 --icmpv6-type neighbor-advertisement -j ACCEPT
+    ip6t -A OUTPUT -p icmpv6 --icmpv6-type router-solicitation -j ACCEPT
+    ip6t -A INPUT -p icmpv6 --icmpv6-type neighbor-solicitation -j ACCEPT
+    ip6t -A INPUT -p icmpv6 --icmpv6-type neighbor-advertisement -j ACCEPT
+    ip6t -A INPUT -p icmpv6 --icmpv6-type router-advertisement -j ACCEPT
     debug "Kill switch: ICMPv6 neighbor discovery allowed"
 
     # 5. Allow DNS traffic to configured DNS servers (IPv4 + IPv6)
@@ -184,10 +233,10 @@ setup_kill_switch() {
             dns="$(echo "$dns" | tr -d ' ')"
             if echo "$dns" | grep -qE ':'; then
                 # IPv6 DNS server
-                ip6tables -A OUTPUT -d "$dns" -p udp --dport 53 -j ACCEPT
-                ip6tables -A OUTPUT -d "$dns" -p tcp --dport 53 -j ACCEPT
-                ip6tables -A INPUT -s "$dns" -p udp --sport 53 -j ACCEPT
-                ip6tables -A INPUT -s "$dns" -p tcp --sport 53 -j ACCEPT
+                ip6t -A OUTPUT -d "$dns" -p udp --dport 53 -j ACCEPT
+                ip6t -A OUTPUT -d "$dns" -p tcp --dport 53 -j ACCEPT
+                ip6t -A INPUT -s "$dns" -p udp --sport 53 -j ACCEPT
+                ip6t -A INPUT -s "$dns" -p tcp --sport 53 -j ACCEPT
             else
                 # IPv4 DNS server
                 iptables -A OUTPUT -d "$dns" -p udp --dport 53 -j ACCEPT
@@ -202,15 +251,15 @@ setup_kill_switch() {
     # 6. Allow established/related connections (IPv4 + IPv6)
     iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-    ip6tables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-    ip6tables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    ip6t -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    ip6t -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
     debug "Kill switch: established/related allowed (IPv4+IPv6)"
 
     # 7. Drop everything else (IPv4 + IPv6)
     iptables -A OUTPUT -j DROP
     iptables -A INPUT -j DROP
-    ip6tables -A OUTPUT -j DROP
-    ip6tables -A INPUT -j DROP
+    ip6t -A OUTPUT -j DROP
+    ip6t -A INPUT -j DROP
     info "Kill switch enabled — all non-VPN traffic will be blocked (IPv4+IPv6)"
 }
 
