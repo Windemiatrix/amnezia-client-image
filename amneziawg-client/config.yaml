@@ -32,9 +32,15 @@ options:
   log_level: "info"
   health_check_host: "1.1.1.1"
   kill_switch: true
+  local_subnets:
+    - "192.168.0.0/16"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
 
 schema:
   config_file: str
   log_level: "list(debug|info|warn|error)"
   health_check_host: str
   kill_switch: bool
+  local_subnets:
+    - str
