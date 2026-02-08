@@ -101,7 +101,7 @@ bump-major: ## Bump major version (1.0.5 → 2.0.0), update files, commit and ta
 set-version: ## Set version explicitly: make set-version NEW_VERSION=1.2.3
 	@if [ -z "$(NEW_VERSION)" ]; then echo "Error: NEW_VERSION is required"; exit 1; fi
 	@echo "==> Bumping version: $(CURRENT_VERSION) → $(NEW_VERSION)"
-	@sed -i'' -e 's/^version: ".*"/version: "$(NEW_VERSION)"/' amneziawg-client/config.yaml
+	@sed -i '' 's/^version: ".*"/version: "$(NEW_VERSION)"/' amneziawg-client/config.yaml
 	@echo "    Updated amneziawg-client/config.yaml"
 	@git add amneziawg-client/config.yaml
 	@git commit -m "chore: bump version to $(NEW_VERSION)"
