@@ -50,12 +50,13 @@ Place your AmneziaWG `.conf` file inside the mounted `/config` directory. The fi
 
 ### Environment Variables
 
-| Variable            | Default            | Description                                         |
-| ------------------- | ------------------ | --------------------------------------------------- |
-| `WG_CONFIG_FILE`    | `/config/wg0.conf` | Path to the AmneziaWG configuration file            |
-| `LOG_LEVEL`         | `info`             | Logging verbosity: `debug`, `info`, `warn`, `error` |
-| `KILL_SWITCH`       | `1`                | Block traffic outside VPN: `1` — on, `0` — off      |
-| `HEALTH_CHECK_HOST` | `1.1.1.1`          | IP address to ping through VPN for health checks    |
+| Variable            | Default            | Description                                                  |
+| ------------------- | ------------------ | ------------------------------------------------------------ |
+| `WG_CONFIG_FILE`    | `/config/wg0.conf` | Path to the AmneziaWG configuration file                     |
+| `LOG_LEVEL`         | `info`             | Logging verbosity: `debug`, `info`, `warn`, `error`          |
+| `KILL_SWITCH`       | `1`                | Block traffic outside VPN: `1` — on, `0` — off               |
+| `HEALTH_CHECK_HOST` | `1.1.1.1`          | IP address to ping through VPN for health checks             |
+| `LOCAL_SUBNETS`     | *(empty)*          | Comma-separated CIDRs to exclude from VPN (e.g., `192.168.0.0/16,10.0.0.0/8`) |
 
 ### Required Runtime Parameters
 
@@ -130,6 +131,7 @@ services:
       - KILL_SWITCH=1
       - LOG_LEVEL=info
       - HEALTH_CHECK_HOST=1.1.1.1
+      - LOCAL_SUBNETS=192.168.0.0/16,10.0.0.0/8,172.16.0.0/12
     restart: unless-stopped
 
   app:
@@ -177,6 +179,7 @@ Example manifests are in [examples/kubernetes/](examples/kubernetes/):
    - **Log Level** — logging verbosity
    - **Health Check Host** — IP to ping through VPN
    - **Kill Switch** — block traffic outside VPN
+   - **Local Subnets** — subnets to exclude from VPN routing (keep LAN access)
 5. Start the add-on.
 
 See [amneziawg-client/DOCS.md](amneziawg-client/DOCS.md) for detailed documentation.
@@ -205,12 +208,13 @@ When `KILL_SWITCH=1` (default), the entrypoint configures iptables rules to prev
 
 1. Allow loopback traffic
 2. Allow traffic to the AmneziaWG endpoint (IP:port parsed from `.conf`)
-3. Allow traffic through the VPN interface
-4. Allow ICMPv6 neighbor discovery
-5. Allow DNS traffic to servers from `.conf` (if DNS is configured)
-6. Allow FORWARD through the VPN interface (gateway mode)
-7. Allow established/related connections
-8. **DROP** everything else (OUTPUT, INPUT, and FORWARD)
+3. Allow traffic to local subnets (from `LOCAL_SUBNETS`)
+4. Allow traffic through the VPN interface
+5. Allow ICMPv6 neighbor discovery
+6. Allow DNS traffic to servers from `.conf` (if DNS is configured)
+7. Allow FORWARD through the VPN interface (gateway mode)
+8. Allow established/related connections
+9. **DROP** everything else (OUTPUT, INPUT, and FORWARD)
 
 This also provides DNS leak protection — DNS queries are restricted to the VPN tunnel.
 
@@ -321,6 +325,16 @@ This will print which check failed: interface, handshake, or connectivity.
 1. Verify the AmneziaWG server is reachable from the host.
 2. Check that `--sysctl net.ipv4.conf.all.src_valid_mark=1` is set.
 3. Try disabling the kill switch temporarily: `-e KILL_SWITCH=0`.
+
+### Lost connection to host / Home Assistant after starting VPN
+
+This happens when `AllowedIPs = 0.0.0.0/0` routes all traffic (including local) through the VPN tunnel. Set `LOCAL_SUBNETS` to keep local network traffic off the tunnel:
+
+```bash
+-e LOCAL_SUBNETS=192.168.0.0/16,10.0.0.0/8,172.16.0.0/12
+```
+
+For Home Assistant, the add-on includes these subnets by default in the `local_subnets` option.
 
 ### Traffic from other containers doesn't go through VPN
 

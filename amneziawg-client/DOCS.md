@@ -51,12 +51,13 @@ PersistentKeepalive = 25
 
 ### Options
 
-| Option              | Default    | Description                                            |
-| ------------------- | ---------- | ------------------------------------------------------ |
-| `config_file`       | `wg0.conf` | Name of the config file in `/config`                   |
-| `log_level`         | `info`     | Logging verbosity: `debug`, `info`, `warn`, `error`    |
-| `health_check_host` | `1.1.1.1`  | IP address to ping through VPN for health verification |
-| `kill_switch`       | `true`     | Block all traffic if VPN tunnel goes down              |
+| Option              | Default                                          | Description                                            |
+| ------------------- | ------------------------------------------------ | ------------------------------------------------------ |
+| `config_file`       | `wg0.conf`                                       | Name of the config file in `/config`                   |
+| `log_level`         | `info`                                           | Logging verbosity: `debug`, `info`, `warn`, `error`    |
+| `health_check_host` | `1.1.1.1`                                        | IP address to ping through VPN for health verification |
+| `kill_switch`       | `true`                                           | Block all traffic if VPN tunnel goes down              |
+| `local_subnets`     | `192.168.0.0/16`, `10.0.0.0/8`, `172.16.0.0/12` | Subnets to exclude from VPN routing (keep LAN access)  |
 
 ### Example Configuration
 
@@ -65,15 +66,20 @@ config_file: "wg0.conf"
 log_level: "info"
 health_check_host: "1.1.1.1"
 kill_switch: true
+local_subnets:
+  - "192.168.0.0/16"
+  - "10.0.0.0/8"
+  - "172.16.0.0/12"
 ```
 
 ## How It Works
 
 1. The add-on reads the AmneziaWG config from `/config/<config_file>`.
 2. A TUN interface is created and the VPN tunnel is established using `awg-quick up`.
-3. NAT (MASQUERADE) rules are applied for traffic forwarding.
-4. If **kill switch** is enabled, iptables rules block all non-VPN traffic.
-5. A health check periodically pings `health_check_host` through the VPN tunnel.
+3. Routes for `local_subnets` are added through the original gateway (bypassing VPN).
+4. NAT (MASQUERADE) rules are applied for traffic forwarding.
+5. If **kill switch** is enabled, iptables rules block all non-VPN traffic (local subnets are still allowed).
+6. A health check periodically pings `health_check_host` through the VPN tunnel.
 
 ## Kill Switch
 
@@ -81,6 +87,7 @@ When enabled (default), the kill switch blocks all network traffic that doesn't 
 
 The kill switch allows:
 - Traffic to the VPN endpoint (so the tunnel can reconnect)
+- Traffic to local subnets (configured via `local_subnets`)
 - Loopback traffic
 - DNS traffic to servers specified in the config
 - Established/related connections
@@ -114,6 +121,12 @@ If any check fails, the add-on is marked as **unhealthy**.
 
 - Make sure `kill_switch` is enabled to prevent leaks.
 - Verify the server config has `AllowedIPs = 0.0.0.0/0` for full tunnel mode.
+
+### Lost connection to Home Assistant after starting VPN
+
+- This happens when all traffic (including local) is routed through VPN.
+- Add your local network to `local_subnets` (e.g., `192.168.1.0/24`).
+- The default configuration already includes common private subnets (`192.168.0.0/16`, `10.0.0.0/8`, `172.16.0.0/12`).
 
 ## Using as a Network Gateway
 
