@@ -58,6 +58,7 @@ LABEL org.opencontainers.image.title="amnezia-client-image" \
 # Runtime dependencies for awg-quick (bash script) and networking
 RUN apk add --no-cache \
         bash \
+        jq \
         iproute2 \
         iptables \
         ip6tables \
