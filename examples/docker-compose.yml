@@ -1,15 +1,43 @@
 # =============================================================================
-# Docker Compose — AmneziaWG VPN client with app routing through VPN
+# Docker Compose — AmneziaWG VPN client
+#
+# Two usage modes:
+#   1. LAN Gateway: uncomment the "vpn-gateway" service (host networking)
+#      to use as a network gateway for LAN devices via static routes.
+#   2. Container Gateway: use the "vpn" + "app" services to route
+#      container traffic through VPN via network_mode: service:vpn.
 #
 # Usage:
 #   1. Place your AmneziaWG .conf file in ./config/ directory
 #   2. docker compose -f examples/docker-compose.yml up -d
-#
-# The "app" service routes all traffic through the VPN container.
-# Replace it with your own application.
 # =============================================================================
 
 services:
+
+  # --- Mode 1: LAN Gateway (host networking) ---------------------------------
+  # Use this to route traffic from LAN devices through VPN.
+  # On your router, set the host IP as next-hop for desired subnets.
+  #
+  # vpn-gateway:
+  #   image: ghcr.io/windemiatrix/amnezia-client-image:latest
+  #   container_name: amneziawg-gw
+  #   network_mode: host
+  #   cap_add:
+  #     - NET_ADMIN
+  #     - SYS_MODULE
+  #   devices:
+  #     - /dev/net/tun:/dev/net/tun
+  #   sysctls:
+  #     - net.ipv4.conf.all.src_valid_mark=1
+  #     - net.ipv4.ip_forward=1
+  #   volumes:
+  #     - ./config:/config
+  #   environment:
+  #     - KILL_SWITCH=0
+  #     - LOG_LEVEL=info
+  #   restart: unless-stopped
+
+  # --- Mode 2: Container Gateway (bridge networking) -------------------------
   vpn:
     image: ghcr.io/windemiatrix/amnezia-client-image:latest
     container_name: amneziawg

@@ -166,7 +166,11 @@ Entrypoint копирует конфиг с правами `600` во време
 
 ### 4.1 VPN-шлюз
 
-Контейнер выступает как VPN-шлюз для других контейнеров. Схема:
+Контейнер выступает как VPN-шлюз в двух режимах:
+
+#### Контейнерный шлюз (Docker Compose / Kubernetes)
+
+Другие контейнеры подключаются через `network_mode: service:vpn` (Compose) или sidecar (K8s).
 
 ```
 ┌───────────────┐     ┌──────────────────┐     ┌──────────────┐
@@ -177,13 +181,33 @@ Entrypoint копирует конфиг с правами `600` во време
 └───────────────┘     └──────────────────┘     └──────────────┘
 ```
 
-**Entrypoint** настраивает iptables MASQUERADE:
+#### Сетевой шлюз (LAN gateway)
+
+Контейнер работает с host networking (`--network=host` или `host_network: true` в HA). На роутере указывается IP хоста как next-hop. Устройства LAN маршрутизируют трафик через VPN.
+
+```
+┌───────────────┐     ┌──────────────────┐     ┌──────────────┐
+│  LAN Device   │────▶│  Host + Container│────▶│  AmneziaWG   │
+│  (PC, phone)  │     │  (host network)  │     │  Server      │
+│  next-hop:    │     │  FORWARD + NAT   │     │  (remote)    │
+│  host IP      │     │  MASQUERADE      │     │              │
+└───────────────┘     └──────────────────┘     └──────────────┘
+```
+
+Требования для LAN gateway:
+- `net.ipv4.ip_forward=1` (включается автоматически через sysctl)
+- `KILL_SWITCH=0` (рекомендуется, иначе INPUT из LAN блокируется)
+- `AllowedIPs` в `.conf` должен включать маршрутизируемые сети
+
+**Entrypoint** настраивает iptables FORWARD и MASQUERADE:
 
 ```bash
+iptables -A FORWARD -i "$WG_INTERFACE" -j ACCEPT
+iptables -A FORWARD -o "$WG_INTERFACE" -j ACCEPT
 iptables -t nat -A POSTROUTING -o "$WG_INTERFACE" -j MASQUERADE
 ```
 
-Другие контейнеры подключаются через `network_mode: service:vpn` (Compose) или sidecar (K8s).
+Другие контейнеры подключаются через `network_mode: service:vpn` (Compose) или sidecar (K8s). LAN-устройства — через статический маршрут на роутере.
 
 ### 4.2 Kill Switch
 
@@ -192,9 +216,11 @@ iptables -t nat -A POSTROUTING -o "$WG_INTERFACE" -j MASQUERADE
 1. Разрешить трафик на loopback.
 2. Разрешить трафик к AmneziaWG endpoint (IP:port из `.conf`).
 3. Разрешить трафик через VPN-интерфейс (`wg0`).
-4. Разрешить DNS-трафик к серверам из `.conf` (если указан DNS).
-5. Разрешить established/related соединения.
-6. **DROP** всего остального.
+4. Разрешить ICMPv6 neighbor discovery.
+5. Разрешить DNS-трафик к серверам из `.conf` (если указан DNS).
+6. Разрешить FORWARD через VPN-интерфейс (режим шлюза).
+7. Разрешить established/related соединения.
+8. **DROP** всего остального (OUTPUT, INPUT, FORWARD).
 
 Это предотвращает утечку трафика при падении VPN-туннеля.
 
@@ -264,6 +290,7 @@ arch:
   - armhf
 init: false
 startup: services
+host_network: true
 image: "ghcr.io/<owner>/amnezia-client-image/{arch}"
 privileged:
   - NET_ADMIN
