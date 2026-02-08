@@ -1,7 +1,7 @@
-# amnedia-client-image
+# amnezia-client-image
 
-[![Build](https://github.com/Windemiatrix/amnedia-client-image/actions/workflows/build.yml/badge.svg)](https://github.com/Windemiatrix/amnedia-client-image/actions/workflows/build.yml)
-[![Release](https://github.com/Windemiatrix/amnedia-client-image/actions/workflows/release.yml/badge.svg)](https://github.com/Windemiatrix/amnedia-client-image/actions/workflows/release.yml)
+[![Build](https://github.com/Windemiatrix/amnezia-client-image/actions/workflows/build.yml/badge.svg)](https://github.com/Windemiatrix/amnezia-client-image/actions/workflows/build.yml)
+[![Release](https://github.com/Windemiatrix/amnezia-client-image/actions/workflows/release.yml/badge.svg)](https://github.com/Windemiatrix/amnezia-client-image/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Docker image for the [AmneziaWG](https://github.com/amnezia-vpn/amneziawg-go) VPN client running entirely in userspace. Works with Docker, Docker Compose, Kubernetes, and Home Assistant.
@@ -39,7 +39,7 @@ docker run -d \
   --sysctl net.ipv4.ip_forward=1 \
   -v /path/to/config:/config \
   --restart=unless-stopped \
-  ghcr.io/windemiatrix/amnedia-client-image:latest
+  ghcr.io/windemiatrix/amnezia-client-image:latest
 ```
 
 Place your AmneziaWG `.conf` file inside the mounted `/config` directory. The filename determines the network interface name (`wg0.conf` → `wg0`).
@@ -82,7 +82,7 @@ Route traffic from other containers through the VPN tunnel using Docker Compose 
 ```yaml
 services:
   vpn:
-    image: ghcr.io/windemiatrix/amnedia-client-image:latest
+    image: ghcr.io/windemiatrix/amnezia-client-image:latest
     container_name: amneziawg
     cap_add:
       - NET_ADMIN
@@ -135,7 +135,7 @@ Example manifests are in [examples/kubernetes/](examples/kubernetes/):
 1. Add this repository to Home Assistant: **Settings → Add-ons → Add-on Store → ⋮ → Repositories**
 
    ```
-   https://github.com/Windemiatrix/amnedia-client-image
+   https://github.com/Windemiatrix/amnezia-client-image
    ```
 
 2. Find **AmneziaWG Client** in the store and install it.
@@ -244,7 +244,7 @@ cp .env.example .env
 
 | Variable                  | Default                                             | Description                  |
 | ------------------------- | --------------------------------------------------- | ---------------------------- |
-| `IMAGE_NAME`              | `ghcr.io/windemiatrix/amnedia-client-image`         | Image name                   |
+| `IMAGE_NAME`              | `ghcr.io/windemiatrix/amnezia-client-image`         | Image name                   |
 | `IMAGE_TAG`               | `latest`                                            | Image tag                    |
 | `PLATFORMS`               | `linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6` | Target platforms             |
 | `CONFIG_DIR`              | `./config`                                          | Host path for config files   |
