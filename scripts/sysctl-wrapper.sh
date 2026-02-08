@@ -27,5 +27,8 @@ for arg in "$@"; do
     esac
 done
 
-# Fall back to real sysctl to surface the original error
-exec /sbin/sysctl "$@"
+# Cannot set the value and it's not already set — warn but don't fail.
+# In restricted environments (HA, read-only /proc/sys) crashing here
+# causes an unrecoverable restart loop.
+echo "sysctl-wrapper: WARNING: cannot set $* (read-only /proc/sys), continuing anyway" >&2
+exit 0
