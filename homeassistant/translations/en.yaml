@@ -1,0 +1,13 @@
+configuration:
+  config_file:
+    name: Config File
+    description: Name of the AmneziaWG config file in /config
+  log_level:
+    name: Log Level
+    description: Logging verbosity (debug, info, warn, error)
+  health_check_host:
+    name: Health Check Host
+    description: IP address to ping through VPN tunnel for health checks
+  kill_switch:
+    name: Kill Switch
+    description: Block all traffic if VPN tunnel is down

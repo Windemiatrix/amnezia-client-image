@@ -1,0 +1,13 @@
+configuration:
+  config_file:
+    name: Файл конфигурации
+    description: Имя файла конфигурации AmneziaWG в /config
+  log_level:
+    name: Уровень логирования
+    description: Детализация логов (debug, info, warn, error)
+  health_check_host:
+    name: Хост проверки
+    description: IP-адрес для пинга через VPN-туннель
+  kill_switch:
+    name: Аварийный выключатель
+    description: Блокировать весь трафик при падении VPN-туннеля

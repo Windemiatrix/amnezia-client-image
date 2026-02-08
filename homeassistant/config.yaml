@@ -1,0 +1,39 @@
+# =============================================================================
+# Home Assistant Add-on: AmneziaWG Client
+# =============================================================================
+
+name: "AmneziaWG Client"
+version: "1.0.0"
+slug: amneziawg-client
+description: "AmneziaWG VPN client as a Home Assistant Add-on"
+url: "https://github.com/Windemiatrix/amnedia-client-image"
+
+arch:
+  - amd64
+  - aarch64
+  - armv7
+  - armhf
+
+init: false
+startup: services
+
+image: "ghcr.io/windemiatrix/amnedia-client-image/{arch}"
+
+privileged:
+  - NET_ADMIN
+  - SYS_MODULE
+
+map:
+  - config:rw
+
+options:
+  config_file: "wg0.conf"
+  log_level: "info"
+  health_check_host: "1.1.1.1"
+  kill_switch: true
+
+schema:
+  config_file: str
+  log_level: "list(debug|info|warn|error)"
+  health_check_host: str
+  kill_switch: bool
