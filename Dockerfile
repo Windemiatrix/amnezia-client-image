@@ -82,7 +82,8 @@ RUN chmod +x /entrypoint.sh /healthcheck.sh /usr/local/bin/sysctl
 ENV WG_CONFIG_FILE=/config/wg0.conf \
     LOG_LEVEL=info \
     KILL_SWITCH=1 \
-    HEALTH_CHECK_HOST=1.1.1.1
+    HEALTH_CHECK_HOST=1.1.1.1 \
+    LOCAL_SUBNETS=192.168.0.0/16,10.0.0.0/8,172.16.0.0/12
 
 # Config volume
 VOLUME /config

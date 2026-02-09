@@ -35,6 +35,7 @@ services:
   #   environment:
   #     - KILL_SWITCH=0
   #     - LOG_LEVEL=info
+  #     - LOCAL_SUBNETS=192.168.0.0/16,10.0.0.0/8,172.16.0.0/12
   #   restart: unless-stopped
 
   # --- Mode 2: Container Gateway (bridge networking) -------------------------
@@ -55,6 +56,7 @@ services:
       - KILL_SWITCH=1
       - LOG_LEVEL=info
       - HEALTH_CHECK_HOST=1.1.1.1
+      - LOCAL_SUBNETS=192.168.0.0/16,10.0.0.0/8,172.16.0.0/12
     restart: unless-stopped
 
   # Example: container that routes all traffic through the VPN tunnel

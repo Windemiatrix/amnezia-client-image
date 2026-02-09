@@ -11,3 +11,6 @@ configuration:
   kill_switch:
     name: Kill Switch
     description: Block all traffic if VPN tunnel is down
+  local_subnets:
+    name: Local Subnets
+    description: Subnets to exclude from VPN routing (e.g., 192.168.0.0/16). Keeps local network accessible when VPN is active.
